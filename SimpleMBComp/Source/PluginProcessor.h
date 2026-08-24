@@ -11,9 +11,9 @@
 /*
  DSP Roadmap
  1) Split Audio into 3 bands DONE
- 2) Create params to control where this split happens
- 3) Prove that splitting doesn't produce audible artifacts
- 4) Create audio params for 3 compressor bands
+ 2) Create params to control where this split happens DONE
+ 3) Prove that splitting doesn't produce audible artifacts DONE
+ 4) Create audio params for 3 compressor bands DONE
  5) add 2 remaining compressors
  6) Add Ability to mute/solo/bypass individual compressors
  7) Add Input and output gain offset changes in ouput level
