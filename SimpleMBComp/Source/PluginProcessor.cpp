@@ -40,6 +40,9 @@ SimpleMBCompAudioProcessor::SimpleMBCompAudioProcessor()
         param = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(params.at(paramName)));
         jassert(param != nullptr);
     };
+    // GAIN CASTING RANGED AUDIO PARAMS
+    floatHelper(inputGainParam, Names::Gain_In);
+    floatHelper(outputGainParam, Names::Gain_Out);
     
     // LOW BAND CASTING RANGED AUDIO PARAMS
     floatHelper(lowBandComp.attack, Names::Attack_Low_Band);
@@ -175,6 +178,13 @@ void SimpleMBCompAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     
     //invAPBuffer.setSize(spec.numChannels, samplesPerBlock);
     
+    // PREPARING GAIN
+    inputGain.prepare(spec);
+    outputGain.prepare(spec);
+    
+    inputGain.setRampDurationSeconds(0.05); // 50 ms
+    outputGain.setRampDurationSeconds(0.05); // 50 ms
+    
     for (auto& buffer : filterBuffers) {
         
         buffer.setSize(spec.numChannels, samplesPerBlock);
@@ -232,6 +242,13 @@ void SimpleMBCompAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         
         compressor.updateCompressorSettings();
     }
+    
+    // GAIN
+    inputGain.setGainDecibels(inputGainParam->get());
+    outputGain.setGainDecibels(outputGainParam->get());
+    
+    applyGain(buffer, inputGain);
+    
     
     // HIGH & LOWCUT FILTERS
     for (auto& fb : filterBuffers) {
@@ -293,6 +310,8 @@ void SimpleMBCompAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     addFilterBand(buffer, filterBuffers[1]);
     addFilterBand(buffer, filterBuffers[2]);
     
+    applyGain(buffer, outputGain);
+    
 }
 
 //==============================================================================
@@ -314,7 +333,7 @@ void SimpleMBCompAudioProcessor::getStateInformation (juce::MemoryBlock& destDat
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
     
-    // GET PLUGIN STATE INFORMATION &
+    // GET PLUGIN STATE INFORMATION
     juce::MemoryOutputStream mos(destData, true);
     apvts.state.writeToStream(mos);
 }
@@ -341,18 +360,31 @@ juce::AudioProcessorValueTreeState::ParameterLayout SimpleMBCompAudioProcessor::
     using namespace Params;
     const auto& params = GetParams();
     
+    // GAIN IN & OUT
+    auto gainRange = NormalisableRange<float>(-24.f, 24.f, 0.5f, 1);
+    
+    layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Gain_In),
+                                                     params.at(Names::Gain_In),
+                                                     gainRange,
+                                                     0));
+    layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Gain_Out),
+                                                     params.at(Names::Gain_Out),
+                                                     gainRange,
+                                                     0));
     // THRESHOLD
+    auto thresholdRange = NormalisableRange<float>(-60, 12, 1, 1);
+    
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Threshold_Low_Band),
                                                      params.at(Names::Threshold_Low_Band),
-                                                     NormalisableRange<float>(-60, 12, 1, 1),
+                                                     thresholdRange,
                                                      0));
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Threshold_Mid_Band),
                                                      params.at(Names::Threshold_Mid_Band),
-                                                     NormalisableRange<float>(-60, 12, 1, 1),
+                                                     thresholdRange,
                                                      0));
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Threshold_High_Band),
                                                      params.at(Names::Threshold_High_Band),
-                                                     NormalisableRange<float>(-60, 12, 1, 1),
+                                                     thresholdRange,
                                                      0));
     
     // ATTACK

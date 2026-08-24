@@ -14,9 +14,9 @@
  2) Create params to control where this split happens DONE
  3) Prove that splitting doesn't produce audible artifacts DONE
  4) Create audio params for 3 compressor bands DONE
- 5) add 2 remaining compressors
- 6) Add Ability to mute/solo/bypass individual compressors
- 7) Add Input and output gain offset changes in ouput level
+ 5) add 2 remaining compressors DONE
+ 6) Add Ability to mute/solo/bypass individual compressors DONE
+ 7) Add Input and output gain offset changes in ouput level DONE
  8) Clean up
  */
 #include <JuceHeader.h>
@@ -48,6 +48,9 @@ enum Names {
     Bypassed_Mid_Band,
     Bypassed_High_Band,
     
+    Gain_In,
+    Gain_Out
+    
 };
 
 inline const std::map<Names, juce::String>& GetParams() {
@@ -75,7 +78,10 @@ inline const std::map<Names, juce::String>& GetParams() {
         
         {Bypassed_Low_Band, "Bypassed Low Band"},
         {Bypassed_Mid_Band, "Bypassed Mid Band"},
-        {Bypassed_High_Band, "Bypassed High Band"}
+        {Bypassed_High_Band, "Bypassed High Band"},
+        
+        {Gain_In, "Gain In"},
+        {Gain_Out, "Gain Out"}
     };
     
     return params;
@@ -189,6 +195,18 @@ private:
     juce::AudioParameterFloat* midHighCrossover {nullptr};
     
     std::array<juce::AudioBuffer<float>, 3> filterBuffers;
+    
+    juce::dsp::Gain<float> inputGain, outputGain;
+    juce::AudioParameterFloat* inputGainParam {nullptr};
+    juce::AudioParameterFloat* outputGainParam {nullptr};
+    
+    template<typename T, typename U>
+    void applyGain(T& buffer, U& gain) {
+        
+        auto block = juce::dsp::AudioBlock<float>(buffer);
+        auto ctx = juce::dsp::ProcessContextReplacing<float>(block);
+        gain.process(ctx);
+    }
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleMBCompAudioProcessor)
 };
