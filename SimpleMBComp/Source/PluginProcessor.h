@@ -10,7 +10,7 @@
 
 /*
  DSP Roadmap
- 1) Split Audio into 3 bands
+ 1) Split Audio into 3 bands DONE
  2) Create params to control where this split happens
  3) Prove that splitting doesn't produce audible artifacts
  4) Create audio params for 3 compressor bands
@@ -177,6 +177,9 @@ private:
     Filter  LP1,    AP2,
             HP1,    LP2,
                     HP2;
+    
+    //Filter invAP1, invAP2;
+    //juce::AudioBuffer<float> invAPBuffer;
     
     juce::AudioParameterFloat* lowMidCrossover {nullptr};
     juce::AudioParameterFloat* midHighCrossover {nullptr};
